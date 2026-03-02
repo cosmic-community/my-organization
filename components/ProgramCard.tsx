@@ -5,15 +5,37 @@ interface ProgramCardProps {
   program: Program;
 }
 
-function getStatusBadge(status?: string): { className: string; label: string } {
-  const normalized = (status || '').toLowerCase();
+// Changed: Added helper to safely extract string value from status metafield
+// Status can be a plain string or an object like {key: "active", value: "Active"}
+function getStatusString(status: unknown): string {
+  if (typeof status === 'string') {
+    return status;
+  }
+  if (status && typeof status === 'object' && 'value' in status) {
+    const val = (status as { value: unknown }).value;
+    if (typeof val === 'string') {
+      return val;
+    }
+  }
+  if (status && typeof status === 'object' && 'key' in status) {
+    const key = (status as { key: unknown }).key;
+    if (typeof key === 'string') {
+      return key;
+    }
+  }
+  return '';
+}
+
+function getStatusBadge(status?: unknown): { className: string; label: string } {
+  const statusStr = getStatusString(status); // Changed: use safe extraction
+  const normalized = statusStr.toLowerCase();
   if (normalized === 'active') {
     return { className: 'badge badge-active', label: 'Active' };
   }
   if (normalized === 'upcoming') {
     return { className: 'badge badge-upcoming', label: 'Upcoming' };
   }
-  return { className: 'badge badge-inactive', label: status || 'Inactive' };
+  return { className: 'badge badge-inactive', label: statusStr || 'Inactive' };
 }
 
 export default function ProgramCard({ program }: ProgramCardProps) {

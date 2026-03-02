@@ -8,6 +8,26 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Changed: Added helper to safely extract string value from status metafield
+function getStatusString(status: unknown): string {
+  if (typeof status === 'string') {
+    return status;
+  }
+  if (status && typeof status === 'object' && 'value' in status) {
+    const val = (status as { value: unknown }).value;
+    if (typeof val === 'string') {
+      return val;
+    }
+  }
+  if (status && typeof status === 'object' && 'key' in status) {
+    const key = (status as { key: unknown }).key;
+    if (typeof key === 'string') {
+      return key;
+    }
+  }
+  return '';
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const program = await getProgram(slug);
@@ -35,7 +55,7 @@ export default async function ProgramDetailPage({ params }: PageProps) {
   }
 
   const image = program.metadata?.featured_image;
-  const status = program.metadata?.status;
+  const statusStr = getStatusString(program.metadata?.status); // Changed: safely extract status string
   const description = program.metadata?.description;
 
   return (
@@ -87,17 +107,18 @@ export default async function ProgramDetailPage({ params }: PageProps) {
             <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
               {program.title}
             </h1>
-            {status && (
+            {/* Changed: Use safely extracted statusStr instead of raw status */}
+            {statusStr && (
               <span
                 className={`badge ${
-                  status.toLowerCase() === 'active'
+                  statusStr.toLowerCase() === 'active'
                     ? 'badge-active'
-                    : status.toLowerCase() === 'upcoming'
+                    : statusStr.toLowerCase() === 'upcoming'
                     ? 'badge-upcoming'
                     : 'badge-inactive'
                 }`}
               >
-                {status}
+                {statusStr}
               </span>
             )}
           </div>
